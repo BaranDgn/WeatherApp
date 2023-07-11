@@ -10,21 +10,32 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.weatherapp.presenter.view.OpeningScreen
+import com.example.weatherapp.presenter.view.WeatherScreen
 import com.example.weatherapp.ui.theme.WeatherAppTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            WeatherAppTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
-                    Greeting("Android")
+
+            val navController = rememberNavController()
+
+            NavHost(navController = navController, startDestination = "opening_screen"){
+
+                composable("opening_screen"){
+                    OpeningScreen(navController)
+                }
+                composable("weather_screen"){
+                    WeatherScreen(navController = navController)
                 }
             }
+
         }
     }
 }
