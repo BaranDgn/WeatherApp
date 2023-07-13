@@ -1,8 +1,10 @@
 package com.example.weatherapp.presenter.view
 
+import android.content.Context
 import android.text.InputType
 import android.webkit.WebSettings.TextSize
 import android.widget.TextView
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -19,15 +21,25 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.weatherapp.presenter.viewModel.OpeningViewModel
 
 @Composable
-fun OpeningScreen(navController : NavController) {
+fun OpeningScreen(
+    navController : NavController,
+    openViewModel : OpeningViewModel = hiltViewModel()
+) {
 
     var apiKey by remember { mutableStateOf("") }
+    val context: Context = LocalContext.current
+
+
+
 
     Column(
         verticalArrangement = Arrangement.Center,
@@ -36,7 +48,7 @@ fun OpeningScreen(navController : NavController) {
     ) {
 
         TextField(
-            value = apiKey ,
+            value = apiKey,
             onValueChange = {apiKey = it},
             modifier = Modifier
                 .fillMaxWidth()
@@ -57,7 +69,7 @@ fun OpeningScreen(navController : NavController) {
         Spacer(modifier = Modifier.height(16.dp))
         Button(
             onClick = {
-
+                //Toast.makeText(context, "lat: $lat lon: $lon", Toast.LENGTH_SHORT).show()
                 navController.navigate("weather_screen")
             },
             modifier = Modifier
@@ -71,9 +83,5 @@ fun OpeningScreen(navController : NavController) {
         ) {
             Text(text = "Enter", modifier = Modifier.padding(vertical = 8.dp))
         }
-
-
-
-
     }
 }

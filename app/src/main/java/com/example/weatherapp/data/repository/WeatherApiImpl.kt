@@ -1,6 +1,7 @@
 package com.example.weatherapp.data.repository
 
 import com.example.weatherapp.data.model.Weather
+import com.example.weatherapp.data.model.WeatherX
 import com.example.weatherapp.data.service.WeatherApiService
 import com.example.weatherapp.domain.util.Resource
 import dagger.hilt.android.scopes.ActivityScoped
@@ -19,5 +20,6 @@ class WeatherApiImpl@Inject constructor(
         }
         return Resource.Success(response)
     }
+
 
 }
