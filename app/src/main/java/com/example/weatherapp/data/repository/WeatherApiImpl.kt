@@ -12,9 +12,9 @@ class WeatherApiImpl@Inject constructor(
     private var api: WeatherApiService
 ) {
 
-    suspend fun getWeatherData() :Resource<Weather>{
+    suspend fun getWeatherData(lat: Double, lon :Double) :Resource<Weather>{
          val response = try {
-             api.getWeatherData()
+             api.getWeatherData(lat, lon)
         }catch (e: java.lang.Exception){
             return Resource.Error("")
         }

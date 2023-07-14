@@ -1,53 +1,51 @@
-package com.example.weatherapp.presenter.view
+package com.example.weatherapp.presention.view
 
 
 
 import android.annotation.SuppressLint
-import android.content.Context
-import android.graphics.Paint.Align
 import android.os.Build
-import android.webkit.WebSettings.TextSize
-import android.widget.Space
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.Alignment.Companion.Center
-import androidx.compose.ui.Alignment.Companion.CenterHorizontally
-import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.annotation.ExperimentalCoilApi
-import coil.compose.ImagePainter
 import coil.compose.rememberImagePainter
 import com.example.weatherapp.R
 import com.example.weatherapp.data.model.Weather
-import com.example.weatherapp.data.model.WeatherX
-import com.example.weatherapp.domain.util.Constants.BASE_URL
 import com.example.weatherapp.domain.util.Resource
-import com.example.weatherapp.presenter.viewModel.WeatherViewModel
+import com.example.weatherapp.presention.viewModel.WeatherViewModel
+import kotlinx.coroutines.*
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-
 @Composable
-fun WeatherScreen(navController: NavController) {
+fun WeatherScreen(
+    navController: NavController,
+    weaViewModel : WeatherViewModel = hiltViewModel()
+) {
+
+    val latitude by remember{
+        weaViewModel.lat
+    }
+    val longitude by remember{
+        weaViewModel.lon
+    }
+
+
+
 
     Scaffold(
         topBar = {
@@ -97,10 +95,9 @@ fun WeatherScreen(navController: NavController) {
             Column(modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 32.dp)) {
-                WeatherDisplay()
+                WeatherDisplay(lat = latitude, lon=longitude)
                 Spacer(modifier = Modifier.height(16.dp))
-                EachRowOfWeather()
-               // ListingOfWeatherByDays(listOfWeather)
+                EachRowOfWeather(lat =latitude, lon= longitude)
             }
         it
     }
@@ -108,19 +105,19 @@ fun WeatherScreen(navController: NavController) {
 }
 
 
+@SuppressLint("RememberReturnType")
 @OptIn(ExperimentalCoilApi::class)
 @Composable
 fun WeatherDisplay(
-    weatherViewModel : WeatherViewModel = hiltViewModel()
+    weatherViewModel : WeatherViewModel = hiltViewModel(),
+    lat: Double,
+    lon: Double
 ) {
 
-
     val weatherTopInfo = produceState<Resource<Weather>>(initialValue = Resource.Loading()){
-        value = weatherViewModel.getWeatherInfo()
+        value = weatherViewModel.getWeatherInfo(lat, lon)
     }.value
     when(weatherTopInfo){
-
-
         is Resource.Success->{
             Column(
                 verticalArrangement = Arrangement.Center,
@@ -134,39 +131,37 @@ fun WeatherDisplay(
                 val icon : List<String> = weatherTopInfo.data!!.current.weather.mapIndexed { index, weatherX ->
                     weatherX.icon
                 }
-
                 Image(
                     painter = rememberImagePainter("https://openweathermap.org/img/wn/${icon[0]}@2x.png"),
                     contentDescription = "", modifier = Modifier
                         .size(70.dp)
                         .padding(8.dp),
                 )
-
                 Text(text = convertFahToCel(weatherTopInfo.data!!.current.temp)+"°", fontSize = 48.sp, fontWeight = FontWeight.Light,modifier = Modifier.padding(8.dp))
             }
         }
         else->Unit
     }
-
 }
 
-@SuppressLint("SuspiciousIndentation")
+
+@SuppressLint("SuspiciousIndentation", "CoroutineCreationDuringComposition")
 @Composable
 fun EachRowOfWeather(
-    weatherViewModel: WeatherViewModel = hiltViewModel()
+    weatherViewModel: WeatherViewModel = hiltViewModel(),
+    lat: Double,
+    lon: Double
 ) {
 
-
-    val weatherItem = produceState<Resource<Weather>>(initialValue = Resource.Loading()){
-        value = weatherViewModel.getWeatherInfo()
-    }.value
-
-
+        val weatherItem = produceState<Resource<Weather>>(initialValue = Resource.Loading()){
+            value = weatherViewModel.getWeatherInfo(lat,lon)
+           // value = weatherViewModel.getWeatherInfo(41.015137,28.979530)
+        }.value
 
 
-            when(weatherItem){
+
+        when(weatherItem){
                 is Resource.Success ->{
-
                     LazyColumn(contentPadding = PaddingValues(5.dp)){
                         items(weatherItem.data!!.daily) { weather ->
                             Row(
@@ -176,19 +171,17 @@ fun EachRowOfWeather(
                                     .fillMaxWidth()
                                     .padding(horizontal = 4.dp)
                             ) {
-
                                 Row(
                                     modifier = Modifier
                                         .padding(4.dp, 8.dp, 16.dp, 8.dp)
                                         .width(110.dp)
                                 ) {
                                     Text(
-                                        text = convertToDay(weather.dt.toString()),
+                                        text = convertToDay(weather.dt.toDouble()),
                                         fontSize = 18.sp,
                                         color = Color.DarkGray
                                     )
                                 }
-
                                 Spacer(modifier = Modifier.width(16.dp))
 
                                 //Icon
@@ -199,11 +192,11 @@ fun EachRowOfWeather(
                                         Box(
                                             contentAlignment = Alignment.CenterStart, modifier = Modifier
                                                 .width(50.dp)
-                                                .height(50.dp).fillMaxWidth()
+                                                .height(50.dp)
+                                                .fillMaxWidth()
                                         ) {
                                             Image(
                                                 painter = rememberImagePainter("https://openweathermap.org/img/wn/${iconDaily[0]}@2x.png"),
-                                                //painter = rememberImagePainter(weatherIcon.data!!.icon),
                                                 contentDescription = "",
                                                 modifier = Modifier
                                                     .size(50.dp)
@@ -242,16 +235,9 @@ fun EachRowOfWeather(
 
                 else -> Unit
             }
-
-
-
-
-
 }
 
-
-
-private fun convertToDay(myDate : String) : String{
+private fun convertToDay(myDate : Double) : String{
     val secondApiFormat = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
     } else {
@@ -260,7 +246,7 @@ private fun convertToDay(myDate : String) : String{
     val timestamp = myDate.toLong() // timestamp in Long
 
 
-    val timestampAsDateString = java.time.format.DateTimeFormatter.ISO_INSTANT
+    val timestampAsDateString = DateTimeFormatter.ISO_INSTANT
         .format(java.time.Instant.ofEpochSecond(timestamp))
 
 
