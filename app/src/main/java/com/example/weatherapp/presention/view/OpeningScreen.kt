@@ -16,19 +16,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.example.weatherapp.domain.util.Screens
 import com.example.weatherapp.presention.viewModel.OpeningViewModel
 
 @Composable
 fun OpeningScreen(
-    navController : NavController,
-    openViewModel : OpeningViewModel = hiltViewModel()
+    navController : NavController
 ) {
 
     var apiKey by remember { mutableStateOf("") }
     val context: Context = LocalContext.current
-
-
-
 
     Column(
         verticalArrangement = Arrangement.Center,
@@ -59,7 +56,7 @@ fun OpeningScreen(
         Button(
             onClick = {
                 //Toast.makeText(context, "lat: $lat lon: $lon", Toast.LENGTH_SHORT).show()
-                navController.navigate("weather_screen")
+                navController.navigate(Screens.WeatherScreen.route)
             },
             modifier = Modifier
                 .fillMaxWidth()

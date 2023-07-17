@@ -1,78 +1,87 @@
 package com.example.weatherapp
 
 import android.Manifest
-import android.app.PendingIntent
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.os.Build
+import android.location.Geocoder
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.app.ActivityCompat
-import androidx.core.app.TaskStackBuilder
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
-import com.example.weatherapp.domain.util.DataStoreManager
-import com.example.weatherapp.domain.util.LocationDetail
+import com.example.weatherapp.domain.util.DeepLinkPattern
+import com.example.weatherapp.domain.util.LocationSingleton
+import com.example.weatherapp.domain.util.Screens
 import com.example.weatherapp.presention.view.OpeningScreen
 import com.example.weatherapp.presention.view.WeatherScreen
 import com.example.weatherapp.ui.theme.WeatherAppTheme
 import com.google.android.gms.location.*
 import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.*
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private lateinit var fusedLocationProviderClient : FusedLocationProviderClient
-    private lateinit var dataStoreManager : DataStoreManager
+   //private lateinit var dataStoreManager : DataStoreManager
+
+    //private lateinit var locationSingleton : LocationSingleton
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
-       // dataStoreManager = DataStoreManager(this)
 
         setContent {
-            //val navController = rememberNavController()
+            val navController = rememberNavController()
             WeatherApp()
-
         }
-        fetchLocation()
 
-
+        //fetchLocation()
     }
 
     private fun fetchLocation() {
         val locationRequest = LocationRequest.create().apply {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         }
+        //dataStoreManager = DataStoreManager(this)
 
-        dataStoreManager = DataStoreManager(this)
-
+        val geocoder = Geocoder(this)
         val locationCallback = object : LocationCallback() {
             override fun onLocationResult(locationResult: LocationResult?) {
                 locationResult?.lastLocation?.let { location ->
-                    lifecycleScope.launch{
-                       // val result = dataStoreManager.saveToDataStore(location.latitude.toString().format("%.1d"),location.longitude.toString().format("%.1d"))
-                        dataStoreManager.saveToDataStore(
+                    CoroutineScope(Dispatchers.IO).launch{
+                        val addressList = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+                        val address  = addressList!!.firstOrNull()
+                        val city = address?.locality ?: address?.adminArea
+                        val countryCode = address?.countryCode
+                        val locationName = "$city, $countryCode"
+
+                        // val result = dataStoreManager.saveToDataStore(location.latitude.toString().format("%.1d"),location.longitude.toString().format("%.1d"))
+                       /* dataStoreManager.saveToDataStore(
                             LocationDetail(
                                 latitude= location.latitude,
-                                longitude = location.longitude
+                                longitude = location.longitude,
                             )
-                        )
+                        )*/
+                        val locationSingleton = LocationSingleton.getLocation()
+                        locationSingleton.latitude = location.latitude
+                        locationSingleton.longitude = location.longitude
+                        locationSingleton.locationName = locationName ?: ""
                     }
+                   // locationSingleton = LocationDetail
+
+
+
                     Toast.makeText(applicationContext, "lat: ${location.latitude} lon: ${location.longitude}", Toast.LENGTH_LONG).show()
-                  //  Log.d("savelat: ", location.latitude.toString())
-                  //  Log.d("savelat: ", location.longitude.toString())
+                    //Toast.makeText(applicationContext, "Location: $locationName", Toast.LENGTH_LONG).show()
+
+
                 }
             }
         }
@@ -91,26 +100,37 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    override fun onResume() {
+        super.onResume()
+        fetchLocation()
+    }
+/*
     override fun onDestroy() {
         val dataStoreManager = DataStoreManager(this@MainActivity)
         CoroutineScope(Dispatchers.Main).launch {
             dataStoreManager.clearDataStore()
         }
         super.onDestroy()
-
     }
+    */
 }
 
 @Composable
 fun WeatherApp() {
 
     val navController = rememberNavController()
-    NavHost(navController = navController, startDestination = "opening_screen") {
-        composable("opening_screen") {
+    NavHost(navController = navController, startDestination = Screens.HomeScreen.route) {
+        composable(Screens.HomeScreen.route,
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = DeepLinkPattern.HomePattern
+                }
+            )
+        ) {
             OpeningScreen(navController)
         }
         composable(
-            route= "weather_screen",
+            route= Screens.WeatherScreen.route,
 
         ) {
             WeatherScreen(navController = navController)

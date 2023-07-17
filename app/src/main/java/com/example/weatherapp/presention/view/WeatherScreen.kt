@@ -25,6 +25,7 @@ import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.example.weatherapp.R
 import com.example.weatherapp.data.model.Weather
+import com.example.weatherapp.domain.util.LocationSingleton
 import com.example.weatherapp.domain.util.Resource
 import com.example.weatherapp.presention.viewModel.WeatherViewModel
 import kotlinx.coroutines.*
@@ -34,18 +35,15 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun WeatherScreen(
     navController: NavController,
-    weaViewModel : WeatherViewModel = hiltViewModel()
 ) {
 
+    /*
     val latitude by remember{
         weaViewModel.lat
     }
     val longitude by remember{
         weaViewModel.lon
-    }
-
-
-
+    }*/
 
     Scaffold(
         topBar = {
@@ -54,7 +52,7 @@ fun WeatherScreen(
                 backgroundColor = Color.White,
                 contentColor = Color(0xff2F5061),
                 elevation = 10.dp,
-                modifier = Modifier.height(80.dp)
+                modifier = Modifier.height(60.dp)
             ){
                 //TopAppBar Content
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -65,12 +63,11 @@ fun WeatherScreen(
                     ) {
                         Row(
                             modifier = Modifier
-                                .clickable {navController.navigate("opening_screen") }
+                                .clickable {navController.navigate("home_screen") }
                         ){
                             Icon(
                                 painter = painterResource(id = R.drawable.back_arrow),
                                 contentDescription = "",
-                                
                             )
                             //Spacer(modifier = Modifier.width(8.dp))
                             Text(text = "Back", fontSize = 18.sp)
@@ -81,8 +78,6 @@ fun WeatherScreen(
                             .padding(68.dp, 0.dp, 0.dp, 0.dp)){
 
                             Text(text = "Weather App", fontSize = 20.sp, fontWeight = FontWeight.SemiBold,  maxLines= 1, textAlign = TextAlign.Center)
-
-
                         }
                     }
 
@@ -95,27 +90,24 @@ fun WeatherScreen(
             Column(modifier = Modifier
                 .fillMaxSize()
                 .padding(top = 32.dp)) {
-                WeatherDisplay(lat = latitude, lon=longitude)
+                WeatherDisplay()
                 Spacer(modifier = Modifier.height(16.dp))
-                EachRowOfWeather(lat =latitude, lon= longitude)
+                EachRowOfWeather()
             }
         it
     }
     
 }
 
-
 @SuppressLint("RememberReturnType")
 @OptIn(ExperimentalCoilApi::class)
 @Composable
 fun WeatherDisplay(
-    weatherViewModel : WeatherViewModel = hiltViewModel(),
-    lat: Double,
-    lon: Double
+    weatherViewModel : WeatherViewModel = hiltViewModel()
 ) {
-
+    val locationSingleton = LocationSingleton.getLocation().locationName
     val weatherTopInfo = produceState<Resource<Weather>>(initialValue = Resource.Loading()){
-        value = weatherViewModel.getWeatherInfo(lat, lon)
+        value = weatherViewModel.getWeatherInfo()
     }.value
     when(weatherTopInfo){
         is Resource.Success->{
@@ -126,7 +118,7 @@ fun WeatherDisplay(
                     .fillMaxWidth()
                     .padding(16.dp)
             ){
-                Text(text = weatherTopInfo.data!!.timezone, fontSize = 24.sp, fontWeight = FontWeight.SemiBold,color= Color.DarkGray, modifier = Modifier.padding(8.dp))
+                Text(text = locationSingleton, fontSize = 24.sp, fontWeight = FontWeight.SemiBold,color= Color.DarkGray, modifier = Modifier.padding(8.dp))
 
                 val icon : List<String> = weatherTopInfo.data!!.current.weather.mapIndexed { index, weatherX ->
                     weatherX.icon
@@ -148,17 +140,13 @@ fun WeatherDisplay(
 @SuppressLint("SuspiciousIndentation", "CoroutineCreationDuringComposition")
 @Composable
 fun EachRowOfWeather(
-    weatherViewModel: WeatherViewModel = hiltViewModel(),
-    lat: Double,
-    lon: Double
+    weatherViewModel: WeatherViewModel = hiltViewModel()
 ) {
 
         val weatherItem = produceState<Resource<Weather>>(initialValue = Resource.Loading()){
-            value = weatherViewModel.getWeatherInfo(lat,lon)
+            value = weatherViewModel.getWeatherInfo()
            // value = weatherViewModel.getWeatherInfo(41.015137,28.979530)
         }.value
-
-
 
         when(weatherItem){
                 is Resource.Success ->{
@@ -185,10 +173,9 @@ fun EachRowOfWeather(
                                 Spacer(modifier = Modifier.width(16.dp))
 
                                 //Icon
-                                val iconDaily : List<String> = weather.weather.mapIndexed { index, weatherX ->
+                                val iconDaily : List<String> = weather.weather.map {  weatherX ->
                                     weatherX.icon
                                 }
-
                                         Box(
                                             contentAlignment = Alignment.CenterStart, modifier = Modifier
                                                 .width(50.dp)
@@ -203,7 +190,6 @@ fun EachRowOfWeather(
                                                     .padding(horizontal = 8.dp)
                                             )
                                         }
-
                                 Row(
                                     horizontalArrangement = Arrangement.SpaceEvenly,
                                     modifier = Modifier.fillMaxWidth()
